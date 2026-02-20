@@ -41,7 +41,7 @@ shadowGen.blurKernel=16;
 shadowGen.setDarkness(.4);
 
 // ── POST PROCESSING ──
-const pipeline=new BABYLON.DefaultRenderingPipeline('pipeline',true,scene,camera);
+const pipeline=new BABYLON.DefaultRenderingPipeline('pipeline',true,scene,[camera]);
 pipeline.bloomEnabled=true;pipeline.bloomThreshold=.7;pipeline.bloomWeight=.3;pipeline.bloomKernel=32;
 pipeline.fxaaEnabled=true;
 pipeline.imageProcessingEnabled=true;
