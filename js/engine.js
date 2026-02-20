@@ -25,6 +25,8 @@ camera.lowerRadiusLimit=4;camera.upperRadiusLimit=28;
 camera.lowerBetaLimit=.3;camera.upperBetaLimit=1.4;
 camera.wheelDeltaPercentage=.01;
 camera.panningSensibility=0;
+// Right-click only for camera rotation, left-click free for game interaction
+camera.inputs.attached.pointers.buttons=[1,2];
 
 // ── LIGHTS ──
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
@@ -56,7 +58,7 @@ skyMat.diffuseColor=new BABYLON.Color3(0,0,0);
 skyMat.specularColor=new BABYLON.Color3(0,0,0);
 skyMat.emissiveColor=new BABYLON.Color3(.05,.08,.15);
 const skybox=BABYLON.MeshBuilder.CreateBox('skybox',{size:200},scene);
-skybox.material=skyMat;
+skybox.material=skyMat;skybox.isPickable=false;
 
 // ═══════════════════════════════════════════════════
 //  TERRAIN with PBR
@@ -86,7 +88,7 @@ const waterMesh=BABYLON.MeshBuilder.CreateGround('water',{width:80,height:80},sc
 const waterMat=new BABYLON.PBRMaterial('waterMat',scene);
 waterMat.albedoColor=new BABYLON.Color3(.08,.2,.32);
 waterMat.roughness=.15;waterMat.metallic=.4;waterMat.alpha=.65;
-waterMesh.material=waterMat;waterMesh.position.y=-.8;
+waterMesh.material=waterMat;waterMesh.position.y=-.8;waterMesh.isPickable=false;
 
 // Grid lines
 const gridLines=[];
@@ -95,7 +97,7 @@ for(let i=-GRID/2;i<=GRID/2;i++){
   gridLines.push([new BABYLON.Vector3(-GRID/2,.02,i),new BABYLON.Vector3(GRID/2,.02,i)]);
 }
 const gridMesh=BABYLON.MeshBuilder.CreateLineSystem('grid',{lines:gridLines},scene);
-gridMesh.color=new BABYLON.Color3(.15,.25,.18);gridMesh.alpha=.15;
+gridMesh.color=new BABYLON.Color3(.15,.25,.18);gridMesh.alpha=.15;gridMesh.isPickable=false;
 
 // ── HELPERS ──
 function mkPBR(color,rough,metal){

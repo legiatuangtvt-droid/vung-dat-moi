@@ -254,6 +254,9 @@ function mkHuman(isPlayer){
   // ═══════════════════════════════════════
   //  METADATA
   // ═══════════════════════════════════════
+  // Make all humanoid meshes non-pickable (don't block ground/nature picks)
+  root.getChildMeshes().forEach(m=>m.isPickable=false);
+
   root.metadata={...(root.metadata||{}),
     limbs:{waist,neckPivot,armLP,armRP,legLP,legRP,head,elbowLP,elbowRP,kneeLP,kneeRP},
     animTime:Math.random()*10,animState:'idle'};
