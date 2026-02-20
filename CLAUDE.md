@@ -20,7 +20,7 @@ vung-dat-moi/
 │   ├── nature.js       # Trees, rocks, bushes + initial spawn
 │   ├── player.js       # Player mesh + movement
 │   ├── npc.js          # NPC AI (idle/walk/harvest/rest)
-│   ├── building.js     # GLB loader + building placement
+│   ├── building.js     # Building placement (procedural 3D)
 │   ├── ui.js           # UI rendering, showToast(), setSpeed()
 │   ├── save.js         # Save/Load (LocalStorage)
 │   └── main.js         # Interaction, game tick, render loop
@@ -42,3 +42,4 @@ Scripts load as global `<script>` tags in index.html. Order matters:
 - Short variable names in game logic (G = game state, P = player state)
 - Use `bl` for BLDS.find callback, `rs` for RES.find callback (avoid shadow variables)
 - All functions and variables are global scope
+- 3D models are coded procedurally using BABYLON.MeshBuilder (no external GLB/AI tools)

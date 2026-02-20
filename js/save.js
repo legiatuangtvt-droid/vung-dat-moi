@@ -8,7 +8,7 @@ function saveGame(){
     era:G.era,day:G.day,speed:G.speed,population:G.population,happiness:G.happiness,
     res:{...G.res},needLvl:{...G.needLvl},
     player:{hp:G.player.hp,energy:G.player.energy,x:P.x,z:P.z},
-    buildings:G.buildings.map(b=>({id:b.id,x:b.x,z:b.z,isGLB:!!b.isGLB}))
+    buildings:G.buildings.map(b=>({id:b.id,x:b.x,z:b.z}))
   };
   try{
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
@@ -31,9 +31,8 @@ function loadGame(){
     // Remove old buildings
     G.buildings.forEach(b=>{if(b.mesh&&!b.mesh.isDisposed())b.mesh.dispose();});
     G.buildings=[];
-    // Rebuild non-GLB buildings
+    // Rebuild buildings
     data.buildings.forEach(bd=>{
-      if(bd.isGLB)return;
       const def=BLDS.find(bl=>bl.id===bd.id);if(!def)return;
       const mesh=BABYLON.MeshBuilder.CreateBox('bld',{width:def.sz*.85,height:def.h,depth:def.sz*.85},scene);
       mesh.material=mkPBR(BABYLON.Color3.FromHexString(def.c),.7,.1);

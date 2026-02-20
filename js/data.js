@@ -61,7 +61,7 @@ const SHIRTS=[new BABYLON.Color3(.27,.53,.8),new BABYLON.Color3(.8,.27,.27),new 
 //  STATE
 // ═══════════════════════════════════════════════════
 const G={era:0,day:1,speed:1,population:1,happiness:80,res:{},needLvl:{},buildings:[],selected:null,
-  player:{hp:100,energy:100,action:'Đứng yên'},loadedGLBs:{}};
+  player:{hp:100,energy:100,action:'Đứng yên'}};
 RES.forEach(r=>G.res[r.id]=r.era===0?20:0);G.res.food=30;G.res.water=30;
 NEEDS.forEach(n=>G.needLvl[n.id]=n.era<=G.era?65+Math.random()*25:50);
 

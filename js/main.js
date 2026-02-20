@@ -69,7 +69,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){G.selected=null;upd
 // ═══════════════════════════════════════════════════
 function gameTick(){
   if(G.speed===0)return;G.day++;
-  const prod={};G.buildings.forEach(b=>{if(!b.isGLB){const d=BLDS.find(bl=>bl.id===b.id);if(d?.prod)Object.entries(d.prod).forEach(([k,v])=>prod[k]=(prod[k]||0)+v);}});
+  const prod={};G.buildings.forEach(b=>{const d=BLDS.find(bl=>bl.id===b.id);if(d?.prod)Object.entries(d.prod).forEach(([k,v])=>prod[k]=(prod[k]||0)+v);});
   G.res.food=Math.max(0,G.res.food-G.population*.3+(prod.hunger||0)*2);
   G.res.water=Math.max(0,G.res.water-G.population*.2+(prod.thirst||0)*2);
   if(G.era>=2){G.res.iron=(G.res.iron||0)+G.buildings.filter(b=>b.id==='mine').length*.5;G.res.coal=(G.res.coal||0)+G.buildings.filter(b=>b.id==='mine').length*.3;G.res.coin=(G.res.coin||0)+G.population*.05;}

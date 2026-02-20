@@ -39,15 +39,6 @@ body{background:var(--bg);color:var(--txt);font-family:'Noto Sans',sans-serif;ov
 
 #cursor-info{position:fixed;pointer-events:none;z-index:150;background:rgba(6,10,18,.9);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--bright);display:none;backdrop-filter:blur(6px);white-space:nowrap}
 
-/* GLB Upload Panel */
-#glb-panel{position:fixed;bottom:10px;right:8px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;z-index:90;backdrop-filter:blur(10px);width:190px}
-#glb-panel .pt{font-size:10px;margin-bottom:6px}
-.glb-drop{border:2px dashed rgba(78,168,222,.3);border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;font-size:9px;color:var(--dim)}
-.glb-drop:hover,.glb-drop.dragover{border-color:var(--accent);background:rgba(78,168,222,.05);color:var(--accent)}
-.glb-drop input{display:none}
-.glb-list{margin-top:6px;max-height:100px;overflow-y:auto}
-.glb-item{font-size:9px;padding:3px 6px;background:rgba(255,255,255,.03);border-radius:4px;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center;color:var(--txt)}
-.glb-item button{background:rgba(78,168,222,.15);border:none;color:var(--accent);border-radius:3px;padding:2px 6px;font-size:8px;cursor:pointer}
 
 .toast{position:fixed;top:82px;left:50%;transform:translateX(-50%) translateY(-14px);background:rgba(78,168,222,.12);border:1px solid var(--accent);border-radius:8px;padding:7px 18px;font-size:12px;font-weight:600;color:var(--accent);z-index:200;opacity:0;transition:all .3s;pointer-events:none;backdrop-filter:blur(8px)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.toast.gold{background:rgba(212,168,67,.12);border-color:var(--gold);color:var(--gold)}
