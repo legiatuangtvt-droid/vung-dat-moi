@@ -24,11 +24,10 @@ scene.onPointerObservable.add(function(pi){
   }else{cursorInfo.style.display='none';canvas.style.cursor='default';}
 },BABYLON.PointerEventTypes.POINTERMOVE);
 
-// Pointer down — move / harvest / build
-scene.onPointerObservable.add(function(pi){
-  const evt=pi.event;
+// Pointer down — move / harvest / build (direct DOM listener for reliability)
+canvas.addEventListener('pointerdown',function(evt){
   if(evt.button!==0||P.busy)return;
-  const pick=pi.pickInfo;
+  const pick=scene.pick(scene.pointerX,scene.pointerY);
   if(!pick||!pick.hit)return;
 
   // Build mode
@@ -45,7 +44,7 @@ scene.onPointerObservable.add(function(pi){
 
   // Ground
   if(pick.pickedPoint)playerMoveTo(pick.pickedPoint.x,pick.pickedPoint.z,null);
-},BABYLON.PointerEventTypes.POINTERDOWN);
+});
 
 function doHarvest(obj){
   if(obj.isDisposed()||P.busy)return;
