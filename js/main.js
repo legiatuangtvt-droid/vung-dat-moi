@@ -3,8 +3,10 @@
 // ═══════════════════════════════════════════════════
 const cursorInfo=document.getElementById('cursor-info');
 
-scene.onPointerMove=function(evt){
-  const pick=scene.pick(scene.pointerX,scene.pointerY);
+// Pointer move — tooltip + ghost building
+scene.onPointerObservable.add(function(pi){
+  const evt=pi.event;
+  const pick=pi.pickInfo;
   cursorInfo.style.left=(evt.clientX+14)+'px';cursorInfo.style.top=(evt.clientY-10)+'px';
 
   if(ghostMesh&&pick.hit){
@@ -20,12 +22,14 @@ scene.onPointerMove=function(evt){
     else if(md?.type){cursorInfo.style.display='block';cursorInfo.textContent=md.label||'Khai th\u00e1c';cursorInfo.style.color='var(--green)';canvas.style.cursor='pointer';}
     else{cursorInfo.style.display='block';cursorInfo.textContent='\u{1f6b6} Click di chuy\u1ec3n';cursorInfo.style.color='var(--dim)';canvas.style.cursor='crosshair';}
   }else{cursorInfo.style.display='none';canvas.style.cursor='default';}
-};
+},BABYLON.PointerEventTypes.POINTERMOVE);
 
-scene.onPointerDown=function(evt){
+// Pointer down — move / harvest / build
+scene.onPointerObservable.add(function(pi){
+  const evt=pi.event;
   if(evt.button!==0||P.busy)return;
-  const pick=scene.pick(scene.pointerX,scene.pointerY);
-  if(!pick.hit)return;
+  const pick=pi.pickInfo;
+  if(!pick||!pick.hit)return;
 
   // Build mode
   if(G.selected){const p=pick.pickedPoint;const gx=Math.round(p.x),gz=Math.round(p.z);playerMoveTo(gx,gz,()=>placeBuilding(G.selected,gx,gz));return;}
@@ -40,8 +44,8 @@ scene.onPointerDown=function(evt){
   }
 
   // Ground
-  playerMoveTo(pick.pickedPoint.x,pick.pickedPoint.z,null);
-};
+  if(pick.pickedPoint)playerMoveTo(pick.pickedPoint.x,pick.pickedPoint.z,null);
+},BABYLON.PointerEventTypes.POINTERDOWN);
 
 function doHarvest(obj){
   if(obj.isDisposed()||P.busy)return;
