@@ -7,11 +7,16 @@ const scene=new BABYLON.Scene(engine);
 
 // Performance
 scene.performancePriority=BABYLON.ScenePerformancePriority.Intermediate;
-scene.clearColor=new BABYLON.Color4(.04,.06,.09,1);
+scene.clearColor=new BABYLON.Color4(.07,.10,.16,1);
 scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;
-scene.fogDensity=.012;
-scene.fogColor=new BABYLON.Color3(.04,.06,.09);
-scene.ambientColor=new BABYLON.Color3(.15,.18,.25);
+scene.fogDensity=.008;
+scene.fogColor=new BABYLON.Color3(.07,.10,.16);
+scene.ambientColor=new BABYLON.Color3(.25,.28,.35);
+
+// Environment texture for PBR materials (required for proper lighting)
+scene.environmentTexture=BABYLON.CubeTexture.CreateFromPrefilteredData(
+  'https://assets.babylonjs.com/environments/environmentSpecular.env',scene);
+scene.environmentIntensity=.6;
 
 // Camera — ArcRotate (orbit around player)
 const camera=new BABYLON.ArcRotateCamera('cam',Math.PI/4,.9,14,BABYLON.Vector3.Zero(),scene);
@@ -23,11 +28,11 @@ camera.panningSensibility=0;
 
 // ── LIGHTS ──
 const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
-hemi.intensity=.5;hemi.diffuse=new BABYLON.Color3(.6,.7,.85);
-hemi.groundColor=new BABYLON.Color3(.15,.18,.12);
+hemi.intensity=.7;hemi.diffuse=new BABYLON.Color3(.7,.78,.9);
+hemi.groundColor=new BABYLON.Color3(.2,.22,.18);
 
 const sun=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-1,-2,-.5),scene);
-sun.intensity=1.2;sun.diffuse=new BABYLON.Color3(1,.96,.88);
+sun.intensity=1.6;sun.diffuse=new BABYLON.Color3(1,.96,.88);
 
 // ── SHADOWS ──
 const shadowGen=new BABYLON.ShadowGenerator(2048,sun);
@@ -42,14 +47,14 @@ pipeline.fxaaEnabled=true;
 pipeline.imageProcessingEnabled=true;
 pipeline.imageProcessing.toneMappingEnabled=true;
 pipeline.imageProcessing.toneMappingType=BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
-pipeline.imageProcessing.exposure=1.1;pipeline.imageProcessing.contrast=1.15;
+pipeline.imageProcessing.exposure=1.3;pipeline.imageProcessing.contrast=1.2;
 
 // ── SKY ──
 const skyMat=new BABYLON.StandardMaterial('skyMat',scene);
 skyMat.backFaceCulling=false;
 skyMat.diffuseColor=new BABYLON.Color3(0,0,0);
 skyMat.specularColor=new BABYLON.Color3(0,0,0);
-skyMat.emissiveColor=new BABYLON.Color3(.02,.04,.08);
+skyMat.emissiveColor=new BABYLON.Color3(.05,.08,.15);
 const skybox=BABYLON.MeshBuilder.CreateBox('skybox',{size:200},scene);
 skybox.material=skyMat;
 
