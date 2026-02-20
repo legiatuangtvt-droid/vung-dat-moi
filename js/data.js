@@ -56,6 +56,7 @@ const BLDS=[
 
 const SKINS=[new BABYLON.Color3(.96,.82,.66),new BABYLON.Color3(.83,.64,.45),new BABYLON.Color3(.78,.53,.26),new BABYLON.Color3(.55,.33,.14)];
 const SHIRTS=[new BABYLON.Color3(.27,.53,.8),new BABYLON.Color3(.8,.27,.27),new BABYLON.Color3(.27,.67,.27),new BABYLON.Color3(.87,.67,.2)];
+const HAIR_COLORS=[new BABYLON.Color3(.08,.06,.04),new BABYLON.Color3(.35,.2,.1),new BABYLON.Color3(.55,.35,.15),new BABYLON.Color3(.75,.55,.2),new BABYLON.Color3(.4,.12,.08)];
 
 // ═══════════════════════════════════════════════════
 //  STATE
