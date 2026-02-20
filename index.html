@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vùng Đất Mới — Babylon.js + GLB Models</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=JetBrains+Mono:wght@300;400;600&family=Noto+Sans:wght@300;400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e14;--panel:rgba(10,16,24,.93);--border:rgba(78,135,200,.18);--accent:#4ea8de;--ag:rgba(78,168,222,.25);--gold:#d4a843;--gg:rgba(212,168,67,.25);--red:#e05555;--green:#55c87a;--txt:#c8d6e5;--dim:#5a6e82;--bright:#eaf2ff}
+body{background:var(--bg);color:var(--txt);font-family:'Noto Sans',sans-serif;overflow:hidden;height:100vh}
+#renderCanvas{width:100%;height:100%;touch-action:none;outline:none}
+
+/* UI */
+#top-bar{position:fixed;top:0;left:0;right:0;height:44px;background:linear-gradient(180deg,rgba(6,10,18,.96),rgba(6,10,18,.88));border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:100;backdrop-filter:blur(10px)}
+.g-title{font-family:'Cinzel',serif;font-weight:900;font-size:14px;color:var(--gold);text-shadow:0 0 16px var(--gg);letter-spacing:3px;text-transform:uppercase}
+.era-badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--accent);background:rgba(78,168,222,.08);border:1px solid rgba(78,168,222,.25);padding:3px 10px;border-radius:14px}
+.ts{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);display:flex;gap:10px}.ts b{color:var(--bright);font-weight:600}
+
+#res-bar{position:fixed;top:44px;left:0;right:0;height:32px;background:rgba(6,10,18,.85);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:3px;z-index:99;overflow-x:auto;scrollbar-width:none}
+#res-bar::-webkit-scrollbar{display:none}
+.ri{display:flex;align-items:center;gap:3px;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:4px;white-space:nowrap;flex-shrink:0}.ri .v{color:var(--bright);font-weight:600}
+
+#build-panel{position:fixed;top:84px;left:8px;width:195px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;z-index:90;backdrop-filter:blur(10px);max-height:calc(100vh - 96px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.pt{font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.cat-l{font-size:8px;font-weight:600;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin:6px 0 3px}
+.bb{width:100%;padding:6px 8px;margin-bottom:2px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:6px;color:var(--txt);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:7px;text-align:left;transition:all .2s}
+.bb:hover{background:rgba(78,168,222,.08);border-color:var(--accent);transform:translateX(2px)}
+.bb.active{background:rgba(78,168,222,.12);border-color:var(--accent);box-shadow:0 0 10px var(--ag)}
+.bb.locked{opacity:.3;pointer-events:none}
+.bb .bi{font-size:14px;width:18px;text-align:center}.bb .bn{font-weight:600;font-size:10px}.bb .bc{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:1px}
+
+#info-panel{position:fixed;top:84px;right:8px;width:215px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;z-index:90;backdrop-filter:blur(10px);max-height:calc(100vh - 96px);overflow-y:auto}
+.isec{margin-bottom:10px}.st{font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.nr{display:flex;align-items:center;gap:4px;margin-bottom:3px;font-size:10px}.nr .ni{font-size:11px;width:15px;text-align:center}.nr .nl{flex:1;color:var(--dim)}
+.nb{width:50px;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}.nf{height:100%;border-radius:3px;transition:width .4s,background .4s}
+.nv{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);width:22px;text-align:right}
+.sr{display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px}.sr .sl{color:var(--dim)}.sr .sv{font-family:'JetBrains Mono',monospace;color:var(--bright);font-weight:600}
+
+#player-hud{position:fixed;bottom:10px;left:8px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 12px;z-index:90;font-family:'JetBrains Mono',monospace;font-size:10px;min-width:170px}
+.pi-row{display:flex;align-items:center;gap:5px;margin-bottom:3px}.pi-row:last-child{margin:0}
+.pi-bar{width:70px;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}.pi-fill{height:100%;border-radius:3px;transition:width .3s}
+
+#hint-bar{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(8,12,20,.9);border:1px solid var(--border);border-radius:14px;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);z-index:90;white-space:nowrap}
+#hint-bar span{color:var(--accent);font-weight:600}
+
+#cursor-info{position:fixed;pointer-events:none;z-index:150;background:rgba(6,10,18,.9);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--bright);display:none;backdrop-filter:blur(6px);white-space:nowrap}
+
+/* GLB Upload Panel */
+#glb-panel{position:fixed;bottom:10px;right:8px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;z-index:90;backdrop-filter:blur(10px);width:190px}
+#glb-panel .pt{font-size:10px;margin-bottom:6px}
+.glb-drop{border:2px dashed rgba(78,168,222,.3);border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;font-size:9px;color:var(--dim)}
+.glb-drop:hover,.glb-drop.dragover{border-color:var(--accent);background:rgba(78,168,222,.05);color:var(--accent)}
+.glb-drop input{display:none}
+.glb-list{margin-top:6px;max-height:100px;overflow-y:auto}
+.glb-item{font-size:9px;padding:3px 6px;background:rgba(255,255,255,.03);border-radius:4px;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center;color:var(--txt)}
+.glb-item button{background:rgba(78,168,222,.15);border:none;color:var(--accent);border-radius:3px;padding:2px 6px;font-size:8px;cursor:pointer}
+
+.toast{position:fixed;top:82px;left:50%;transform:translateX(-50%) translateY(-14px);background:rgba(78,168,222,.12);border:1px solid var(--accent);border-radius:8px;padding:7px 18px;font-size:12px;font-weight:600;color:var(--accent);z-index:200;opacity:0;transition:all .3s;pointer-events:none;backdrop-filter:blur(8px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.toast.gold{background:rgba(212,168,67,.12);border-color:var(--gold);color:var(--gold)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<canvas id="renderCanvas"></canvas>
+
+<div id="top-bar">
+  <div class="g-title">Vùng Đất Mới</div>
+  <div class="era-badge" id="era-label">KỶ NGUYÊN 1 — SINH TỒN</div>
+  <div class="ts">👤<b id="pop-ct">1</b> 😊<b id="happy-ct" style="color:var(--green)">80%</b> 📅<b id="day-ct">1</b></div>
+</div>
+<div id="res-bar"></div>
+<div id="build-panel"><div class="pt">🔨 Xây Dựng</div><div id="build-list"></div></div>
+<div id="info-panel"></div>
+
+<div id="player-hud">
+  <div style="color:var(--gold);font-weight:600;margin-bottom:4px">🧑 Nhân Vật</div>
+  <div class="pi-row">❤️ HP <div class="pi-bar"><div class="pi-fill" id="hp-bar" style="width:100%;background:var(--red)"></div></div><span id="hp-val">100</span></div>
+  <div class="pi-row">⚡ NL <div class="pi-bar"><div class="pi-fill" id="ep-bar" style="width:100%;background:var(--gold)"></div></div><span id="ep-val">100</span></div>
+  <div class="pi-row">🔧 <span id="act-val" style="color:var(--accent)">Đứng yên</span></div>
+</div>
+
+<div id="hint-bar">
+  <span>Click trái</span> di chuyển / khai thác &nbsp;│&nbsp;
+  <span>Click phải kéo</span> xoay &nbsp;│&nbsp;
+  <span>Scroll</span> zoom &nbsp;│&nbsp;
+  <span>ESC</span> hủy xây &nbsp;│&nbsp;
+  <span>Kéo thả .GLB</span> nạp model
+</div>
+
+<!-- GLB Upload Panel -->
+<div id="glb-panel">
+  <div class="pt">📦 Nạp Model GLB (Meshy AI)</div>
+  <div class="glb-drop" id="glb-drop" onclick="document.getElementById('glb-input').click()">
+    🔽 Kéo thả file .GLB vào đây<br>hoặc click để chọn file
+    <input type="file" id="glb-input" accept=".glb,.gltf" multiple>
+  </div>
+  <div class="glb-list" id="glb-list"></div>
+  <div style="margin-top:6px;font-size:8px;color:var(--dim);line-height:1.4">
+    💡 Tạo model tại <a href="https://www.meshy.ai" target="_blank" style="color:var(--accent)">meshy.ai</a> hoặc
+    <a href="https://www.tripo3d.ai" target="_blank" style="color:var(--accent)">tripo3d.ai</a><br>
+    → Export .GLB → Kéo thả vào đây
+  </div>
+</div>
+
+<div id="cursor-info"></div>
+<div class="toast" id="toast"></div>
+
+<!-- Babylon.js CDN -->
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+<script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════
+const ERAS=[
+{id:0,name:'Sinh Tồn',label:'KỶ NGUYÊN 1 — SINH TỒN',pop:0},
+{id:1,name:'Nông Nghiệp',label:'KỶ NGUYÊN 2 — NÔNG NGHIỆP',pop:5},
+{id:2,name:'Thị Trấn',label:'KỶ NGUYÊN 3 — THỊ TRẤN',pop:20},
+{id:3,name:'Công Nghiệp',label:'KỶ NGUYÊN 4 — CÔNG NGHIỆP',pop:60},
+{id:4,name:'Hiện Đại',label:'KỶ NGUYÊN 5 — HIỆN ĐẠI',pop:150}
+];
+const RES=[
+{id:'wood',name:'Gỗ',icon:'🪵',era:0},{id:'stone',name:'Đá',icon:'🪨',era:0},
+{id:'food',name:'Thực phẩm',icon:'🍖',era:0},{id:'water',name:'Nước',icon:'💧',era:0},
+{id:'fiber',name:'Sợi TV',icon:'🌿',era:0},{id:'clay',name:'Đất sét',icon:'🏺',era:0},
+{id:'herbs',name:'Thảo dược',icon:'🌱',era:0},
+{id:'wheat',name:'Lúa mì',icon:'🌾',era:1},{id:'livestock',name:'Gia súc',icon:'🐄',era:1},
+{id:'leather',name:'Da thuộc',icon:'🦴',era:1},{id:'honey',name:'Mật ong',icon:'🍯',era:1},
+{id:'iron',name:'Sắt',icon:'⛏️',era:2},{id:'copper',name:'Đồng',icon:'🔶',era:2},
+{id:'coal',name:'Than đá',icon:'⚫',era:2},{id:'glass',name:'Thủy tinh',icon:'🔮',era:2},
+{id:'marble',name:'Cẩm thạch',icon:'⬜',era:2},{id:'coin',name:'Tiền xu',icon:'🪙',era:2},
+{id:'steel',name:'Thép',icon:'🔩',era:3},{id:'cement',name:'Xi măng',icon:'🧱',era:3},
+{id:'machinery',name:'Máy móc',icon:'⚙️',era:3},{id:'electric',name:'Điện',icon:'⚡',era:3},
+{id:'medicine',name:'Thuốc',icon:'💊',era:3},
+{id:'silicon',name:'Silicon',icon:'💎',era:4},{id:'electronics',name:'Linh kiện',icon:'🔌',era:4},
+{id:'research',name:'Nghiên cứu',icon:'🔬',era:4}
+];
+const NEEDS=[
+{id:'hunger',name:'No đủ',icon:'🍽️',era:0,w:3,d:.8},{id:'thirst',name:'Nước uống',icon:'🚰',era:0,w:3,d:.9},
+{id:'shelter',name:'Chỗ ở',icon:'🏠',era:0,w:2.5,d:.2},{id:'warmth',name:'Sưởi ấm',icon:'🔥',era:0,w:2,d:.5},
+{id:'safety',name:'An toàn',icon:'🛡️',era:0,w:2,d:.3},
+{id:'health',name:'Sức khỏe',icon:'❤️',era:1,w:2,d:.3},{id:'community',name:'Cộng đồng',icon:'🤝',era:1,w:1.5,d:.2},
+{id:'education',name:'Giáo dục',icon:'📚',era:2,w:1.5,d:.15},{id:'commerce',name:'Mua sắm',icon:'🛒',era:2,w:1.2,d:.2},
+{id:'employment',name:'Việc làm',icon:'💼',era:3,w:2,d:.25},{id:'leisure',name:'Giải trí',icon:'🎪',era:3,w:1.2,d:.2},
+{id:'internet',name:'Internet',icon:'📶',era:4,w:1.8,d:.3},{id:'environment',name:'Môi trường',icon:'🌳',era:4,w:1.5,d:.15}
+];
+const BLDS=[
+{id:'campfire',name:'Lửa trại',icon:'🔥',era:0,cat:'Cơ bản',cost:{wood:5},prod:{warmth:.5},sz:1,c:'#ff6600',h:.3},
+{id:'hut',name:'Túp lều',icon:'⛺',era:0,cat:'Nhà ở',cost:{wood:10,fiber:5},prod:{shelter:.8,safety:.3},sz:1,c:'#8B7355',h:.7,pop:2},
+{id:'well',name:'Giếng nước',icon:'🪣',era:0,cat:'Cơ bản',cost:{stone:8,wood:3},prod:{thirst:1},sz:1,c:'#5588aa',h:.5},
+{id:'storage',name:'Kho chứa',icon:'📦',era:0,cat:'Cơ bản',cost:{wood:15,stone:5},prod:{},sz:1,c:'#9B8B6B',h:.8},
+{id:'farm',name:'Nông trại',icon:'🌾',era:1,cat:'Sản xuất',cost:{wood:15,stone:5},prod:{hunger:1.5},sz:2,c:'#9acd32',h:.3},
+{id:'ranch',name:'Chăn nuôi',icon:'🐄',era:1,cat:'Sản xuất',cost:{wood:20,fiber:10},prod:{hunger:.8},sz:2,c:'#c8a86e',h:.4},
+{id:'woodhouse',name:'Nhà gỗ',icon:'🏡',era:1,cat:'Nhà ở',cost:{wood:25,stone:10,clay:5},prod:{shelter:1.5,warmth:.5},sz:1,c:'#A0785A',h:1,pop:4},
+{id:'market',name:'Chợ',icon:'🏪',era:1,cat:'Dịch vụ',cost:{wood:20,stone:10},prod:{community:1,commerce:.5},sz:2,c:'#CD853F',h:.8},
+{id:'mine',name:'Mỏ khai thác',icon:'⛏️',era:2,cat:'Sản xuất',cost:{wood:30,stone:40},prod:{},sz:2,c:'#696969',h:.6},
+{id:'forge',name:'Xưởng rèn',icon:'🔨',era:2,cat:'Sản xuất',cost:{stone:30,iron:15,coal:10},prod:{employment:.5},sz:1,c:'#555555',h:1},
+{id:'stonehouse',name:'Nhà đá',icon:'🏘️',era:2,cat:'Nhà ở',cost:{stone:40,iron:10},prod:{shelter:2.5,warmth:1},sz:1,c:'#888888',h:1.3,pop:6},
+{id:'school',name:'Trường học',icon:'🏫',era:2,cat:'Dịch vụ',cost:{stone:35,wood:20},prod:{education:1.5},sz:2,c:'#CD6839',h:1.2},
+{id:'factory',name:'Nhà máy',icon:'🏭',era:3,cat:'Sản xuất',cost:{steel:40,cement:30,machinery:10},prod:{employment:2},sz:2,c:'#666677',h:1.8},
+{id:'apartment',name:'Chung cư',icon:'🏢',era:3,cat:'Nhà ở',cost:{cement:50,steel:30},prod:{shelter:4},sz:2,c:'#7A8A9A',h:2.5,pop:20},
+{id:'hospital',name:'Bệnh viện',icon:'🏥',era:3,cat:'Dịch vụ',cost:{cement:40,steel:20,medicine:15},prod:{health:3},sz:2,c:'#EEEEEE',h:2},
+{id:'skyscraper',name:'Cao ốc',icon:'🏙️',era:4,cat:'Nhà ở',cost:{steel:80,silicon:10,electronics:15},prod:{shelter:8},sz:2,c:'#4488BB',h:4,pop:50},
+{id:'datacenter',name:'Data Center',icon:'🖥️',era:4,cat:'Hạ tầng',cost:{steel:50,electronics:40,silicon:20},prod:{internet:3},sz:2,c:'#2255AA',h:1.5},
+{id:'park',name:'Công viên',icon:'🌳',era:4,cat:'Dịch vụ',cost:{cement:20,wood:15},prod:{environment:2,leisure:1},sz:2,c:'#33AA44',h:.3}
+];
+
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+const G={era:0,day:1,speed:1,population:1,happiness:80,res:{},needLvl:{},buildings:[],selected:null,
+  player:{hp:100,energy:100,action:'Đứng yên'},loadedGLBs:{}};
+RES.forEach(r=>G.res[r.id]=r.era===0?20:0);G.res.food=30;G.res.water=30;
+NEEDS.forEach(n=>G.needLvl[n.id]=n.era<=G.era?65+Math.random()*25:50);
+
+// ═══════════════════════════════════════════════════
+//  BABYLON.JS ENGINE
+// ═══════════════════════════════════════════════════
+const canvas=document.getElementById('renderCanvas');
+const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});
+const scene=new BABYLON.Scene(engine);
+
+// Performance
+scene.performancePriority=BABYLON.ScenePerformancePriority.Intermediate;
+scene.clearColor=new BABYLON.Color4(.04,.06,.09,1);
+scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;
+scene.fogDensity=.012;
+scene.fogColor=new BABYLON.Color3(.04,.06,.09);
+scene.ambientColor=new BABYLON.Color3(.15,.18,.25);
+
+// Camera — ArcRotate (orbit around player)
+const camera=new BABYLON.ArcRotateCamera('cam',Math.PI/4,.9,14,BABYLON.Vector3.Zero(),scene);
+camera.attachControl(canvas,true);
+camera.lowerRadiusLimit=4;camera.upperRadiusLimit=28;
+camera.lowerBetaLimit=.3;camera.upperBetaLimit=1.4;
+camera.wheelDeltaPercentage=.01;
+camera.panningSensibility=0; // disable panning
+
+// ── LIGHTS ──
+const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);
+hemi.intensity=.5;hemi.diffuse=new BABYLON.Color3(.6,.7,.85);
+hemi.groundColor=new BABYLON.Color3(.15,.18,.12);
+
+const sun=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-1,-2,-.5),scene);
+sun.intensity=1.2;sun.diffuse=new BABYLON.Color3(1,.96,.88);
+
+// ── SHADOWS ──
+const shadowGen=new BABYLON.ShadowGenerator(2048,sun);
+shadowGen.useBlurExponentialShadowMap=true;
+shadowGen.blurKernel=16;
+shadowGen.setDarkness(.4);
+
+// ── POST PROCESSING ──
+const pipeline=new BABYLON.DefaultRenderingPipeline('pipeline',true,scene,camera);
+pipeline.bloomEnabled=true;pipeline.bloomThreshold=.7;pipeline.bloomWeight=.3;pipeline.bloomKernel=32;
+pipeline.fxaaEnabled=true;
+pipeline.imageProcessingEnabled=true;
+pipeline.imageProcessing.toneMappingEnabled=true;
+pipeline.imageProcessing.toneMappingType=BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+pipeline.imageProcessing.exposure=1.1;pipeline.imageProcessing.contrast=1.15;
+
+// ── SKY ──
+const skyMat=new BABYLON.StandardMaterial('skyMat',scene);
+skyMat.backFaceCulling=false;
+skyMat.diffuseColor=new BABYLON.Color3(0,0,0);
+skyMat.specularColor=new BABYLON.Color3(0,0,0);
+skyMat.emissiveColor=new BABYLON.Color3(.02,.04,.08);
+const skybox=BABYLON.MeshBuilder.CreateBox('skybox',{size:200},scene);
+skybox.material=skyMat;
+
+// ═══════════════════════════════════════════════════
+//  TERRAIN with PBR
+// ═══════════════════════════════════════════════════
+const GRID=40;
+const ground=BABYLON.MeshBuilder.CreateGround('ground',{width:GRID,height:GRID,subdivisions:40,updatable:true},scene);
+const groundMat=new BABYLON.PBRMaterial('groundMat',scene);
+groundMat.albedoColor=new BABYLON.Color3(.2,.32,.16);
+groundMat.roughness=.92;groundMat.metallic=0;
+groundMat.environmentIntensity=.3;
+ground.material=groundMat;
+ground.receiveShadows=true;
+
+// Apply height map
+const positions=ground.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+function getH(x,z){return Math.sin(x*.3)*Math.cos(z*.3)*.6+Math.sin(x*.1+1)*Math.cos(z*.15)*1.2}
+for(let i=0;i<positions.length;i+=3){
+  positions[i+1]=getH(positions[i],positions[i+2]);
+}
+ground.updateVerticesData(BABYLON.VertexBuffer.PositionKind,positions);
+ground.createNormals(false);
+
+// Water
+const waterMesh=BABYLON.MeshBuilder.CreateGround('water',{width:80,height:80},scene);
+const waterMat=new BABYLON.PBRMaterial('waterMat',scene);
+waterMat.albedoColor=new BABYLON.Color3(.08,.2,.32);
+waterMat.roughness=.15;waterMat.metallic=.4;waterMat.alpha=.65;
+waterMesh.material=waterMat;waterMesh.position.y=-.8;
+
+// Grid lines
+const gridLines=[];
+for(let i=-GRID/2;i<=GRID/2;i++){
+  gridLines.push([new BABYLON.Vector3(i,.02,-GRID/2),new BABYLON.Vector3(i,.02,GRID/2)]);
+  gridLines.push([new BABYLON.Vector3(-GRID/2,.02,i),new BABYLON.Vector3(GRID/2,.02,i)]);
+}
+const gridMesh=BABYLON.MeshBuilder.CreateLineSystem('grid',{lines:gridLines},scene);
+gridMesh.color=new BABYLON.Color3(.15,.25,.18);gridMesh.alpha=.15;
+
+// ═══════════════════════════════════════════════════
+//  HUMANOID (PBR Materials)
+// ═══════════════════════════════════════════════════
+const SKINS=[new BABYLON.Color3(.96,.82,.66),new BABYLON.Color3(.83,.64,.45),new BABYLON.Color3(.78,.53,.26),new BABYLON.Color3(.55,.33,.14)];
+const SHIRTS=[new BABYLON.Color3(.27,.53,.8),new BABYLON.Color3(.8,.27,.27),new BABYLON.Color3(.27,.67,.27),new BABYLON.Color3(.87,.67,.2)];
+
+function mkPBR(color,rough,metal){
+  const m=new BABYLON.PBRMaterial('m'+Math.random(),scene);
+  m.albedoColor=color;m.roughness=rough;m.metallic=metal||0;m.environmentIntensity=.3;return m;
+}
+
+function mkHuman(isPlayer){
+  const root=new BABYLON.TransformNode('human',scene);
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const skinC=pick(SKINS),shirtC=isPlayer?new BABYLON.Color3(.14,.47,.93):pick(SHIRTS);
+  const pantC=isPlayer?new BABYLON.Color3(.13,.2,.33):new BABYLON.Color3(.2,.17,.13);
+  const skinM=mkPBR(skinC,.65,0),shirtM=mkPBR(shirtC,.7,0),pantM=mkPBR(pantC,.75,0);
+  const shoeM=mkPBR(new BABYLON.Color3(.12,.12,.12),.8,0);
+
+  // Waist pivot
+  const waist=new BABYLON.TransformNode('waist',scene);waist.parent=root;waist.position.y=.44;
+
+  // Torso
+  const chest=BABYLON.MeshBuilder.CreateCylinder('chest',{height:.22,diameterTop:.2,diameterBottom:.19,tessellation:8},scene);
+  chest.material=shirtM;chest.parent=waist;chest.position.y=.14;chest.castShadow=true;shadowGen.addShadowCaster(chest);
+
+  // Neck
+  const neckPivot=new BABYLON.TransformNode('neck',scene);neckPivot.parent=waist;neckPivot.position.y=.27;
+  const neck=BABYLON.MeshBuilder.CreateCylinder('nk',{height:.06,diameter:.07,tessellation:8},scene);
+  neck.material=skinM;neck.parent=neckPivot;neck.position.y=.03;
+
+  // Head
+  const head=BABYLON.MeshBuilder.CreateSphere('head',{diameter:.22,segments:10},scene);
+  head.material=skinM;head.parent=neckPivot;head.position.y=.14;head.castShadow=true;shadowGen.addShadowCaster(head);
+
+  // Eyes
+  const eyeM=mkPBR(new BABYLON.Color3(.08,.08,.08),.3,0);
+  const eL=BABYLON.MeshBuilder.CreateSphere('eL',{diameter:.03,segments:6},scene);
+  eL.material=eyeM;eL.parent=neckPivot;eL.position.set(-.035,.15,.09);
+  const eR=eL.clone('eR');eR.parent=neckPivot;eR.position.x=.035;
+
+  // Arms
+  const armLP=new BABYLON.TransformNode('armLP',scene);armLP.parent=waist;armLP.position.set(-.14,.23,0);
+  const aL=BABYLON.MeshBuilder.CreateCylinder('aL',{height:.24,diameterTop:.055,diameterBottom:.045,tessellation:7},scene);
+  aL.material=shirtM;aL.parent=armLP;aL.position.y=-.12;aL.castShadow=true;shadowGen.addShadowCaster(aL);
+  const hL=BABYLON.MeshBuilder.CreateSphere('hL',{diameter:.05,segments:5},scene);hL.material=skinM;hL.parent=armLP;hL.position.y=-.26;
+
+  const armRP=new BABYLON.TransformNode('armRP',scene);armRP.parent=waist;armRP.position.set(.14,.23,0);
+  const aR=BABYLON.MeshBuilder.CreateCylinder('aR',{height:.24,diameterTop:.055,diameterBottom:.045,tessellation:7},scene);
+  aR.material=shirtM;aR.parent=armRP;aR.position.y=-.12;aR.castShadow=true;shadowGen.addShadowCaster(aR);
+  const hR=BABYLON.MeshBuilder.CreateSphere('hR',{diameter:.05,segments:5},scene);hR.material=skinM;hR.parent=armRP;hR.position.y=-.26;
+
+  // Legs
+  const legLP=new BABYLON.TransformNode('legLP',scene);legLP.parent=root;legLP.position.set(-.05,.38,0);
+  const lL=BABYLON.MeshBuilder.CreateCylinder('lL',{height:.3,diameterTop:.07,diameterBottom:.05,tessellation:7},scene);
+  lL.material=pantM;lL.parent=legLP;lL.position.y=-.15;lL.castShadow=true;shadowGen.addShadowCaster(lL);
+  const fL=BABYLON.MeshBuilder.CreateBox('fL',{width:.05,height:.03,depth:.1},scene);
+  fL.material=shoeM;fL.parent=legLP;fL.position.set(0,-.32,.015);
+
+  const legRP=new BABYLON.TransformNode('legRP',scene);legRP.parent=root;legRP.position.set(.05,.38,0);
+  const lR=BABYLON.MeshBuilder.CreateCylinder('lR',{height:.3,diameterTop:.07,diameterBottom:.05,tessellation:7},scene);
+  lR.material=pantM;lR.parent=legRP;lR.position.y=-.15;lR.castShadow=true;shadowGen.addShadowCaster(lR);
+  const fR=BABYLON.MeshBuilder.CreateBox('fR',{width:.05,height:.03,depth:.1},scene);
+  fR.material=shoeM;fR.parent=legRP;fR.position.set(0,-.32,.015);
+
+  // Player ring
+  if(isPlayer){
+    const ring=BABYLON.MeshBuilder.CreateTorus('ring',{diameter:.5,thickness:.04,tessellation:24},scene);
+    ring.material=mkPBR(new BABYLON.Color3(.3,.66,.87),.2,.5);ring.material.alpha=.5;
+    ring.parent=root;ring.position.y=.03;ring.rotation.x=Math.PI/2;
+    root.metadata={...root.metadata,ring};
+  }
+
+  root.metadata={...(root.metadata||{}),limbs:{waist,neckPivot,armLP,armRP,legLP,legRP,head},animTime:Math.random()*10,animState:'idle'};
+  return root;
+}
+
+function animHuman(root,dt){
+  const md=root.metadata;if(!md||!md.limbs)return;
+  const L=md.limbs,t=md.animTime,s=md.animState;
+  L.waist.rotation.x=0;L.waist.rotation.z=0;
+
+  if(s==='walk'){
+    const sw=Math.sin(t*9);
+    L.armLP.rotation.x=sw*.55;L.armRP.rotation.x=-sw*.55;
+    L.legLP.rotation.x=-sw*.5;L.legRP.rotation.x=sw*.5;
+    L.waist.position.y=.44+Math.abs(Math.sin(t*18))*.006;
+    L.neckPivot.rotation.x=sw*.02;
+  }else if(s==='harvest'){
+    const ch=Math.sin(t*7);
+    L.armRP.rotation.x=-2+ch*.8;L.armLP.rotation.x=-.4;
+    L.waist.rotation.x=.1+Math.sin(t*7)*.08;
+    L.legLP.rotation.x=.1;L.legRP.rotation.x=-.05;
+  }else if(s==='build'){
+    const hm=Math.sin(t*6);
+    L.armLP.rotation.x=-1.8+hm*.45;L.armRP.rotation.x=-1.8+hm*.45;
+    L.waist.rotation.x=.1;L.legLP.rotation.x=.15;L.legRP.rotation.x=.15;
+  }else{
+    const sw=Math.sin(t*1.5);
+    L.armLP.rotation.x=sw*.04;L.armRP.rotation.x=-sw*.04;
+    L.legLP.rotation.x=0;L.legRP.rotation.x=0;
+    L.waist.position.y=.44;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  NATURE OBJECTS (PBR)
+// ═══════════════════════════════════════════════════
+const natureNodes=[];
+const treeMat=mkPBR(new BABYLON.Color3(.17,.4,.12),.82,0);
+const trunkMat=mkPBR(new BABYLON.Color3(.35,.22,.1),.88,0);
+const rockMat=mkPBR(new BABYLON.Color3(.45,.45,.5),.8,.05);
+const bushMat=mkPBR(new BABYLON.Color3(.15,.5,.2),.82,0);
+
+function mkTree(x,z){
+  const root=new BABYLON.TransformNode('tree',scene);
+  root.position.set(x,getH(x,z),z);
+  const trunk=BABYLON.MeshBuilder.CreateCylinder('tr',{height:.6,diameterTop:.12,diameterBottom:.18,tessellation:6},scene);
+  trunk.material=trunkMat;trunk.parent=root;trunk.position.y=.3;trunk.castShadow=true;shadowGen.addShadowCaster(trunk);
+  const crown=BABYLON.MeshBuilder.CreateSphere('cr',{diameter:.7+Math.random()*.3,segments:6},scene);
+  crown.material=treeMat;crown.parent=root;crown.position.y=.8+Math.random()*.2;crown.castShadow=true;shadowGen.addShadowCaster(crown);
+  root.metadata={type:'tree',res:'wood',amt:3,label:'🪵 Gỗ (+3)'};
+  natureNodes.push(root);return root;
+}
+function mkRock(x,z){
+  const r=BABYLON.MeshBuilder.CreatePolyhedron('rock',{type:1,size:.2+Math.random()*.15},scene);
+  r.material=rockMat;r.position.set(x,getH(x,z)+.15,z);r.rotation.set(Math.random(),Math.random(),Math.random());
+  r.castShadow=true;shadowGen.addShadowCaster(r);
+  r.metadata={type:'rock',res:'stone',amt:3,label:'🪨 Đá (+3)'};
+  natureNodes.push(r);return r;
+}
+function mkBush(x,z){
+  const b=BABYLON.MeshBuilder.CreateSphere('bush',{diameter:.35+Math.random()*.15,segments:5},scene);
+  b.material=bushMat;b.position.set(x,getH(x,z)+.1,z);b.castShadow=true;shadowGen.addShadowCaster(b);
+  b.metadata={type:'bush',res:'herbs',amt:2,label:'🌱 Thảo dược (+2)'};
+  natureNodes.push(b);return b;
+}
+
+for(let i=0;i<70;i++){const x=(Math.random()-.5)*34,z=(Math.random()-.5)*34;if(getH(x,z)>-.3)mkTree(x,z);}
+for(let i=0;i<25;i++){const x=(Math.random()-.5)*34,z=(Math.random()-.5)*34;if(getH(x,z)>-.2)mkRock(x,z);}
+for(let i=0;i<18;i++){const x=(Math.random()-.5)*34,z=(Math.random()-.5)*34;if(getH(x,z)>-.1)mkBush(x,z);}
+
+// ═══════════════════════════════════════════════════
+//  PLAYER
+// ═══════════════════════════════════════════════════
+const playerMesh=mkHuman(true);
+playerMesh.position.set(0,getH(0,0),0);
+const P={x:0,z:0,targetX:0,targetZ:0,moving:false,onArrive:null,busy:false};
+
+// Move marker
+const markerMat=mkPBR(new BABYLON.Color3(.3,.66,.87),.2,.5);markerMat.alpha=0;
+const marker=BABYLON.MeshBuilder.CreateTorus('marker',{diameter:.5,thickness:.03,tessellation:16},scene);
+marker.material=markerMat;marker.rotation.x=Math.PI/2;marker.position.y=.05;
+let markerFade=0;
+
+function updatePlayer(dt){
+  if(P.moving&&!P.busy){
+    const dx=P.targetX-P.x,dz=P.targetZ-P.z,dist=Math.hypot(dx,dz);
+    const arriveR=P.onArrive?1.2:.2;
+    if(dist<arriveR){
+      P.moving=false;playerMesh.metadata.animState='idle';G.player.action='Đứng yên';
+      if(P.onArrive){const cb=P.onArrive;P.onArrive=null;cb();}
+    }else{
+      const spd=3.2*dt;P.x+=dx/dist*spd;P.z+=dz/dist*spd;
+      P.x=Math.max(-18,Math.min(18,P.x));P.z=Math.max(-18,Math.min(18,P.z));
+      playerMesh.rotation.y=Math.atan2(dx,dz);
+      playerMesh.metadata.animState='walk';G.player.action='Di chuyển';
+      G.player.energy=Math.max(0,G.player.energy-.015);
+    }
+  }
+  playerMesh.position.set(P.x,getH(P.x,P.z),P.z);
+  camera.target.set(P.x,getH(P.x,P.z)+.5,P.z);
+  if(markerFade>0){markerFade-=dt*2;markerMat.alpha=Math.max(0,markerFade*.4);}
+  if(playerMesh.metadata.ring)playerMesh.metadata.ring.material.alpha=.3+Math.sin(Date.now()*.003)*.12;
+}
+
+function playerMoveTo(x,z,cb){P.targetX=x;P.targetZ=z;P.moving=true;P.onArrive=cb||null;marker.position.set(x,getH(x,z)+.05,z);markerFade=1;}
+
+// ═══════════════════════════════════════════════════
+//  NPC
+// ═══════════════════════════════════════════════════
+const npcs=[];
+function spawnNPC(){const m=mkHuman(false);const a=Math.random()*Math.PI*2,d=3+Math.random()*8;const x=Math.cos(a)*d,z=Math.sin(a)*d;m.position.set(x,getH(x,z),z);npcs.push({mesh:m,x,z,state:'idle',tx:x,tz:z,timer:Math.random()*3,task:null,spd:.7+Math.random()*.4});}
+function updateNPCs(dt){
+  const tgt=Math.max(0,Math.min(25,G.population-1));
+  while(npcs.length<tgt)spawnNPC();
+  while(npcs.length>tgt){const n=npcs.pop();n.mesh.dispose();}
+  npcs.forEach(n=>{
+    n.timer-=dt;
+    if(n.state==='idle'&&n.timer<=0){const r=Math.random();if(r<.4){n.state='walk';n.tx=n.x+(Math.random()-.5)*8;n.tz=n.z+(Math.random()-.5)*8;}else if(r<.6&&natureNodes.length>0){let near=null,nd=999;natureNodes.forEach(t=>{if(!t.isDisposed()){const d=Math.hypot(t.position.x-n.x,t.position.z-n.z);if(d<nd){nd=d;near=t;}}});if(near&&nd<12){n.state='walk';n.tx=near.position.x;n.tz=near.position.z;n.task={type:'harvest',t:near};}else n.timer=2;}else{n.state='rest';n.timer=3+Math.random()*3;n.mesh.metadata.animState='rest';}}
+    if(n.state==='walk'){const dx=n.tx-n.x,dz=n.tz-n.z,d=Math.hypot(dx,dz);if(d<.3){if(n.task?.type==='harvest'){n.state='harvest';n.timer=2+Math.random()*2;n.mesh.metadata.animState='harvest';}else{n.state='idle';n.timer=1+Math.random()*3;n.mesh.metadata.animState='idle';}n.task=null;}else{const s=n.spd*dt;n.x+=dx/d*s;n.z+=dz/d*s;n.mesh.position.set(n.x,getH(n.x,n.z),n.z);n.mesh.rotation.y=Math.atan2(dx,dz);n.mesh.metadata.animState='walk';}}
+    if(n.state==='harvest'&&n.timer<=0){if(n.task?.t&&!n.task.t.isDisposed()){const t=n.task.t;G.res[t.metadata.res]=(G.res[t.metadata.res]||0)+t.metadata.amt;const idx=natureNodes.indexOf(t);if(idx>-1)natureNodes.splice(idx,1);t.dispose();}n.state='idle';n.timer=1;n.mesh.metadata.animState='idle';n.task=null;}
+    if(n.state==='rest'&&n.timer<=0){n.state='idle';n.timer=.5;n.mesh.metadata.animState='idle';}
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  GLB MODEL LOADER — Meshy AI / Tripo AI
+// ═══════════════════════════════════════════════════
+const loadedModels={};
+
+async function loadGLBFile(file){
+  const url=URL.createObjectURL(file);
+  const name=file.name.replace(/\.[^.]+$/,'');
+  try{
+    const result=await BABYLON.SceneLoader.ImportMeshAsync('','',url,scene,null,'.glb');
+    const root=new BABYLON.TransformNode(name+'_root',scene);
+    let bounds={min:new BABYLON.Vector3(Infinity,Infinity,Infinity),max:new BABYLON.Vector3(-Infinity,-Infinity,-Infinity)};
+    result.meshes.forEach(m=>{
+      if(m.getBoundingInfo){
+        const b=m.getBoundingInfo().boundingBox;
+        bounds.min=BABYLON.Vector3.Minimize(bounds.min,b.minimumWorld);
+        bounds.max=BABYLON.Vector3.Maximize(bounds.max,b.maximumWorld);
+      }
+      m.parent=root;m.castShadow=true;shadowGen.addShadowCaster(m);m.receiveShadows=true;
+    });
+    // Normalize size to ~1 unit
+    const size=bounds.max.subtract(bounds.min);
+    const maxDim=Math.max(size.x,size.y,size.z);
+    if(maxDim>0)root.scaling=new BABYLON.Vector3(1/maxDim,1/maxDim,1/maxDim);
+    root.setEnabled(false); // template — disable until placed
+    loadedModels[name]={root,meshes:result.meshes,animations:result.animationGroups};
+    showToast(`✅ Model "${name}" đã nạp thành công!`);
+    updateGLBList();
+    return name;
+  }catch(e){
+    showToast(`❌ Lỗi nạp ${file.name}: ${e.message}`,true);
+    return null;
+  }
+}
+
+function placeGLBModel(name,x,z){
+  const tmpl=loadedModels[name];if(!tmpl)return;
+  const clone=tmpl.root.clone(name+'_placed_'+Date.now(),null);
+  clone.setEnabled(true);
+  clone.position.set(x,getH(x,z),z);
+  // Play animations if any
+  if(tmpl.animations?.length>0){tmpl.animations.forEach(ag=>{const c=ag.clone(ag.name+'_c');c.start(true);});}
+  G.buildings.push({id:'custom_'+name,x,z,mesh:clone,isGLB:true});
+  showToast(`📦 Đã đặt model "${name}"!`);
+  updateUI();
+}
+
+// GLB drag & drop + file input
+const glbDrop=document.getElementById('glb-drop');
+const glbInput=document.getElementById('glb-input');
+
+glbDrop.addEventListener('dragover',e=>{e.preventDefault();glbDrop.classList.add('dragover');});
+glbDrop.addEventListener('dragleave',()=>glbDrop.classList.remove('dragover'));
+glbDrop.addEventListener('drop',e=>{e.preventDefault();glbDrop.classList.remove('dragover');[...e.dataTransfer.files].forEach(f=>{if(f.name.match(/\.(glb|gltf)$/i))loadGLBFile(f);});});
+glbInput.addEventListener('change',e=>{[...e.target.files].forEach(f=>loadGLBFile(f));});
+// Also allow drag onto canvas
+canvas.addEventListener('dragover',e=>e.preventDefault());
+canvas.addEventListener('drop',e=>{e.preventDefault();[...e.dataTransfer.files].forEach(f=>{if(f.name.match(/\.(glb|gltf)$/i))loadGLBFile(f);});});
+
+function updateGLBList(){
+  const list=document.getElementById('glb-list');list.innerHTML='';
+  Object.keys(loadedModels).forEach(name=>{
+    const div=document.createElement('div');div.className='glb-item';
+    div.innerHTML=`📦 ${name} <button onclick="G.selected='glb:${name}';updateUI()">🔨 Đặt</button>`;
+    list.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  BUILDING PLACEMENT (procedural or GLB)
+// ═══════════════════════════════════════════════════
+let ghostMesh=null;
+function updateGhost(bid){
+  if(ghostMesh){ghostMesh.dispose();ghostMesh=null;}
+  if(!bid)return;
+  if(bid.startsWith('glb:')){
+    const name=bid.slice(4);const tmpl=loadedModels[name];if(!tmpl)return;
+    ghostMesh=tmpl.root.clone('ghost',null);ghostMesh.setEnabled(true);
+    ghostMesh.getChildMeshes().forEach(m=>{if(m.material){const cm=m.material.clone('gm');cm.alpha=.4;m.material=cm;}});
+    ghostMesh.position.y=-999;return;
+  }
+  const b=BLDS.find(x=>x.id===bid);if(!b)return;
+  ghostMesh=BABYLON.MeshBuilder.CreateBox('ghost',{width:b.sz*.9,height:b.h,depth:b.sz*.9},scene);
+  const gm=new BABYLON.StandardMaterial('gm',scene);gm.diffuseColor=BABYLON.Color3.FromHexString(b.c);gm.alpha=.35;
+  ghostMesh.material=gm;ghostMesh.position.y=-999;
+}
+
+function placeBuilding(bid,x,z){
+  if(bid.startsWith('glb:')){placeGLBModel(bid.slice(4),x,z);G.selected=null;updateGhost(null);return;}
+  const b=BLDS.find(x=>x.id===bid);if(!b)return;
+  const pd=Math.hypot(x-P.x,z-P.z);if(pd>6){showToast('Quá xa!',true);return;}
+  for(const[r,a]of Object.entries(b.cost)){if((G.res[r]||0)<a){showToast(`Thiếu ${RES.find(x=>x.id===r)?.name||r}!`,true);return;}}
+  for(const[r,a]of Object.entries(b.cost))G.res[r]-=a;
+  P.busy=true;G.player.action='Xây dựng';playerMesh.metadata.animState='build';
+  setTimeout(()=>{
+    const mesh=BABYLON.MeshBuilder.CreateBox('bld',{width:b.sz*.85,height:b.h,depth:b.sz*.85},scene);
+    mesh.material=mkPBR(BABYLON.Color3.FromHexString(b.c),.7,.1);
+    mesh.position.set(x,getH(x,z)+b.h/2,z);mesh.castShadow=true;shadowGen.addShadowCaster(mesh);mesh.receiveShadows=true;
+    if(b.cat==='Nhà ở'&&b.era<3){
+      const roof=BABYLON.MeshBuilder.CreateCylinder('roof',{height:b.h*.4,diameterTop:0,diameterBottom:b.sz*1.1,tessellation:4},scene);
+      roof.material=mkPBR(new BABYLON.Color3(.55,.26,.07),.8,0);roof.parent=mesh;roof.position.y=b.h/2+b.h*.2;roof.rotation.y=Math.PI/4;
+      shadowGen.addShadowCaster(roof);
+    }
+    G.buildings.push({id:b.id,x,z,mesh});
+    if(b.pop)G.population+=b.pop;
+    showToast(`${b.icon} ${b.name} đã xây xong!`);
+    P.busy=false;playerMesh.metadata.animState='idle';G.player.action='Đứng yên';
+    G.player.energy=Math.max(0,G.player.energy-5);
+    G.selected=null;updateGhost(null);checkEra();updateUI();
+  },1200);
+}
+
+// ═══════════════════════════════════════════════════
+//  MOUSE INTERACTION
+// ═══════════════════════════════════════════════════
+const cursorInfo=document.getElementById('cursor-info');
+
+scene.onPointerMove=function(evt){
+  const pick=scene.pick(scene.pointerX,scene.pointerY);
+  cursorInfo.style.left=(evt.clientX+14)+'px';cursorInfo.style.top=(evt.clientY-10)+'px';
+
+  if(ghostMesh&&pick.hit){
+    const p=pick.pickedPoint;const gx=Math.round(p.x),gz=Math.round(p.z);
+    ghostMesh.position.set(gx,getH(gx,gz)+(ghostMesh.getBoundingInfo?ghostMesh.getBoundingInfo().boundingBox.extendSize.y:0),gz);
+  }
+
+  // Tooltip
+  if(pick.hit&&pick.pickedMesh){
+    let md=pick.pickedMesh.metadata;
+    if(!md){let p=pick.pickedMesh.parent;while(p&&!p.metadata?.type)p=p.parent;if(p)md=p.metadata;}
+    if(G.selected){cursorInfo.style.display='block';cursorInfo.textContent='🔨 Click để xây';cursorInfo.style.color='var(--gold)';canvas.style.cursor='cell';}
+    else if(md?.type){cursorInfo.style.display='block';cursorInfo.textContent=md.label||'Khai thác';cursorInfo.style.color='var(--green)';canvas.style.cursor='pointer';}
+    else{cursorInfo.style.display='block';cursorInfo.textContent='🚶 Click di chuyển';cursorInfo.style.color='var(--dim)';canvas.style.cursor='crosshair';}
+  }else{cursorInfo.style.display='none';canvas.style.cursor='default';}
+};
+
+scene.onPointerDown=function(evt){
+  if(evt.button!==0||P.busy)return;
+  const pick=scene.pick(scene.pointerX,scene.pointerY);
+  if(!pick.hit)return;
+
+  // Build mode
+  if(G.selected){const p=pick.pickedPoint;const gx=Math.round(p.x),gz=Math.round(p.z);playerMoveTo(gx,gz,()=>placeBuilding(G.selected,gx,gz));return;}
+
+  // Nature?
+  let md=pick.pickedMesh?.metadata;
+  if(!md){let p=pick.pickedMesh?.parent;while(p&&!p.metadata?.type)p=p.parent;if(p)md=p.metadata;}
+  if(md?.type){
+    const obj=pick.pickedMesh.metadata?.type?pick.pickedMesh:(()=>{let p=pick.pickedMesh.parent;while(p&&!p.metadata?.type)p=p.parent;return p;})();
+    if(obj)playerMoveTo(obj.position.x,obj.position.z,()=>doHarvest(obj));
+    return;
+  }
+
+  // Ground
+  playerMoveTo(pick.pickedPoint.x,pick.pickedPoint.z,null);
+};
+
+function doHarvest(obj){
+  if(obj.isDisposed()||P.busy)return;
+  P.busy=true;G.player.action='Khai thác';playerMesh.metadata.animState='harvest';
+  playerMesh.rotation.y=Math.atan2(obj.position.x-P.x,obj.position.z-P.z);
+  setTimeout(()=>{
+    if(!obj.isDisposed()){
+      const r=obj.metadata.res,a=obj.metadata.amt;
+      G.res[r]=(G.res[r]||0)+a;
+      if(obj.metadata.type==='tree')G.res.fiber=(G.res.fiber||0)+1;
+      if(obj.metadata.type==='rock')G.res.clay=(G.res.clay||0)+1;
+      const idx=natureNodes.indexOf(obj);if(idx>-1)natureNodes.splice(idx,1);
+      obj.dispose();
+      showToast(`+${a} ${RES.find(x=>x.id===r)?.icon||''} ${RES.find(x=>x.id===r)?.name||r}`);
+      G.player.energy=Math.max(0,G.player.energy-3);
+    }
+    P.busy=false;playerMesh.metadata.animState='idle';G.player.action='Đứng yên';updateUI();
+  },900);
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){G.selected=null;updateGhost(null);updateUI();}});
+
+// ═══════════════════════════════════════════════════
+//  GAME TICK
+// ═══════════════════════════════════════════════════
+function gameTick(){
+  if(G.speed===0)return;G.day++;
+  const prod={};G.buildings.forEach(b=>{if(!b.isGLB){const d=BLDS.find(x=>x.id===b.id);if(d?.prod)Object.entries(d.prod).forEach(([k,v])=>prod[k]=(prod[k]||0)+v);}});
+  G.res.food=Math.max(0,G.res.food-G.population*.3+(prod.hunger||0)*2);
+  G.res.water=Math.max(0,G.res.water-G.population*.2+(prod.thirst||0)*2);
+  if(G.era>=2){G.res.iron=(G.res.iron||0)+G.buildings.filter(b=>b.id==='mine').length*.5;G.res.coal=(G.res.coal||0)+G.buildings.filter(b=>b.id==='mine').length*.3;G.res.coin=(G.res.coin||0)+G.population*.05;}
+  if(G.era>=3){G.res.steel=(G.res.steel||0)+G.buildings.filter(b=>b.id==='factory').length*.3;}
+  NEEDS.forEach(n=>{if(n.era>G.era)return;let v=G.needLvl[n.id]||50;v-=n.d*(G.population/10+1);if(prod[n.id])v+=prod[n.id]*3;if(n.id==='hunger'&&G.res.food>G.population)v+=2;if(n.id==='thirst'&&G.res.water>G.population)v+=2;G.needLvl[n.id]=Math.max(0,Math.min(100,v));});
+  let tw=0,ws=0;NEEDS.forEach(n=>{if(n.era<=G.era){tw+=n.w;ws+=(G.needLvl[n.id]||50)*n.w;}});G.happiness=Math.round(ws/tw);
+  if(G.happiness>70&&G.day%10===0)G.population+=Math.ceil(G.population*.05);
+  if(G.happiness<30&&G.day%5===0&&G.population>1)G.population=Math.max(1,G.population-1);
+  G.player.hp=Math.min(100,G.player.hp+.1);G.player.energy=Math.min(100,G.player.energy+.3);
+  checkEra();updateUI();
+}
+function checkEra(){for(let i=ERAS.length-1;i>=0;i--){if(G.population>=ERAS[i].pop&&G.era<i){G.era=i;showToast(`🎉 ${ERAS[i].label}!`,false,true);RES.forEach(r=>{if(r.era===i&&!G.res[r.id])G.res[r.id]=0;});break;}}}
+
+// ═══════════════════════════════════════════════════
+//  UI (same as before)
+// ═══════════════════════════════════════════════════
+function updateUI(){
+  document.getElementById('era-label').textContent=ERAS[G.era].label;
+  document.getElementById('pop-ct').textContent=G.population;
+  const hc=document.getElementById('happy-ct');hc.textContent=G.happiness+'%';hc.style.color=G.happiness>60?'var(--green)':G.happiness>35?'var(--gold)':'var(--red)';
+  document.getElementById('day-ct').textContent=G.day;
+  const rb=document.getElementById('res-bar');rb.innerHTML='';
+  RES.filter(r=>r.era<=G.era).forEach(r=>{const d=document.createElement('div');d.className='ri';d.innerHTML=`<span>${r.icon}</span><span class="v">${Math.floor(G.res[r.id]||0)}</span>`;d.title=r.name;rb.appendChild(d);});
+  const bl=document.getElementById('build-list');bl.innerHTML='';
+  const cats={};BLDS.forEach(b=>{if(!cats[b.cat])cats[b.cat]=[];cats[b.cat].push(b);});
+  Object.entries(cats).forEach(([cat,bs])=>{const cd=document.createElement('div');cd.innerHTML=`<div class="cat-l">${cat}</div>`;bs.forEach(b=>{const locked=b.era>G.era;const cs=Object.entries(b.cost).map(([r,a])=>`${RES.find(x=>x.id===r)?.icon||r}${a}`).join(' ');const btn=document.createElement('button');btn.className=`bb${locked?' locked':''}${G.selected===b.id?' active':''}`;btn.innerHTML=`<span class="bi">${b.icon}</span><span><div class="bn">${b.name}${locked?' 🔒':''}</div><div class="bc">${cs}</div></span>`;if(!locked)btn.onclick=()=>{G.selected=G.selected===b.id?null:b.id;updateGhost(G.selected);updateUI();};cd.appendChild(btn);});bl.appendChild(cd);});
+  // GLB models as build options
+  if(Object.keys(loadedModels).length>0){
+    const cd=document.createElement('div');cd.innerHTML='<div class="cat-l">📦 Model GLB</div>';
+    Object.keys(loadedModels).forEach(name=>{
+      const btn=document.createElement('button');const sid='glb:'+name;
+      btn.className=`bb${G.selected===sid?' active':''}`;
+      btn.innerHTML=`<span class="bi">📦</span><span><div class="bn">${name}</div><div class="bc">Model tùy chỉnh</div></span>`;
+      btn.onclick=()=>{G.selected=G.selected===sid?null:sid;updateGhost(G.selected);updateUI();};
+      cd.appendChild(btn);
+    });bl.appendChild(cd);
+  }
+
+  const ip=document.getElementById('info-panel');let h='<div class="isec"><div class="st">👥 Nhu Cầu</div>';
+  NEEDS.filter(n=>n.era<=G.era).forEach(n=>{const v=Math.round(G.needLvl[n.id]||0);const c=v>60?'#55c87a':v>35?'#d4a843':'#e05555';h+=`<div class="nr"><span class="ni">${n.icon}</span><span class="nl">${n.name}</span><div class="nb"><div class="nf" style="width:${v}%;background:${c}"></div></div><span class="nv">${v}%</span></div>`;});
+  h+='</div><div class="isec"><div class="st">📊 Thống Kê</div>';
+  h+=`<div class="sr"><span class="sl">Công trình</span><span class="sv">${G.buildings.length}</span></div><div class="sr"><span class="sl">Dân NPC</span><span class="sv">${npcs.length}</span></div><div class="sr"><span class="sl">Models GLB</span><span class="sv">${Object.keys(loadedModels).length}</span></div></div>`;
+  const ne=ERAS[G.era+1];h+='<div class="isec"><div class="st">🔬 Tiến Độ</div>';
+  if(ne){const p=Math.min(100,Math.round(G.population/ne.pop*100));h+=`<div style="font-size:10px;color:var(--dim)">→ <span style="color:var(--gold)">${ne.name}</span> (${ne.pop} dân)</div><div class="nb" style="width:100%;margin-top:3px"><div class="nf" style="width:${p}%;background:var(--gold)"></div></div>`;}
+  else h+='<div style="font-size:10px;color:var(--gold)">🏆 Max!</div>';
+  h+='</div>';ip.innerHTML=h;
+  document.getElementById('hp-bar').style.width=G.player.hp+'%';document.getElementById('hp-val').textContent=Math.round(G.player.hp);
+  document.getElementById('ep-bar').style.width=G.player.energy+'%';document.getElementById('ep-val').textContent=Math.round(G.player.energy);
+  document.getElementById('act-val').textContent=G.player.action;
+}
+function showToast(msg,err,gold){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(gold?' gold':'');if(err){t.style.borderColor='var(--red)';t.style.color='var(--red)';}setTimeout(()=>{t.className='toast';t.style.borderColor='';t.style.color='';},2200);}
+function setSpeed(s){G.speed=s;}
+
+// ═══════════════════════════════════════════════════
+//  RENDER LOOP
+// ═══════════════════════════════════════════════════
+let tickAccum=0;
+scene.registerBeforeRender(function(){
+  const dt=engine.getDeltaTime()/1000;
+  updatePlayer(dt);
+  updateNPCs(dt*G.speed);
+  // Animate humanoids
+  [playerMesh,...npcs.map(n=>n.mesh)].forEach(h=>{if(h.metadata){h.metadata.animTime+=dt;animHuman(h,dt);}});
+  // Game tick
+  if(G.speed>0){tickAccum+=dt;const iv=2/G.speed;while(tickAccum>=iv){tickAccum-=iv;gameTick();}}
+  // Water anim
+  waterMat.alpha=.55+Math.sin(Date.now()*.001)*.08;
+});
+
+engine.runRenderLoop(()=>scene.render());
+window.addEventListener('resize',()=>engine.resize());
+updateUI();
+</script>
+</body>
+</html>
